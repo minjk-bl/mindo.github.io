@@ -70,6 +70,12 @@
 	    margin-bottom: 1rem;
 	  }
 	}
+	
+	/* 입력 칸 스타일 */
+	textarea.names-input {
+		height: 100%;
+		width: 100%;
+	}
 
     /* 모달 스타일 */
     .modal-overlay {
@@ -156,7 +162,7 @@
   <div class="form-grid">
   	<div class="left-column">
 	  <label>이름 목록 (한 줄에 한 명씩)</label>
-	  <textarea id="namesInput" rows="8" placeholder="예: 김민수&#10;이영희&#10;박지훈"></textarea>
+	  <textarea id="namesInput" class="names-input" rows="8" placeholder="예: 김민수&#10;이영희&#10;박지훈"></textarea>
 	</div>
 	<div class="right-column">
 	  <label>분할 방식 선택</label>
