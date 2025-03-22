@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>랜덤 팀 나누기</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐️</text></svg>">
+  <style>
+    body {
+      font-family: Pretendard, sans-serif;
+      background-color: #f0f8ff;
+      padding: 2rem;
+      color: #333;
+    }
+    h1 {
+      color: #0077cc;
+    }
+    textarea, input, select, button {
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+
+    /* 모달 스타일 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: pop-in 0.4s ease-out;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+	  background-color: #0077cc;
+	  color: white;
+	  padding: 1rem 1.25rem;
+	  display: flex;
+	  align-items: center;
+	  border-top-left-radius: 16px;
+	  border-top-right-radius: 16px;
+	}
+
+	.modal-title {
+	  font-weight: bold;
+	  font-size: 1.1rem;
+	  flex: 1; /* 타이틀이 남는 공간을 차지하도록 */
+	}
+
+	.close-btn {
+	  font-size: 1.2rem;
+	  cursor: pointer;
+	  color: white;
+	  background: none;
+	  border: none;
+	  padding: 0;
+	  margin-left: 1rem;
+	  line-height: 1;
+	  width: 50px;
+	  height: 40px;
+	}
+	.close-btn:hover {
+	  opacity: 0.8;
+	}
+
+
+    .modal-content {
+      padding: 1.5rem;
+      overflow: auto;
+    }
+
+    @keyframes pop-in {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .team {
+      background: #e6f2ff;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .team h3 {
+      margin-top: 0;
+      color: #005fa3;
+    }
+  </style>
+</head>
+<body>
+  <h1>랜덤 팀 나누기</h1>
+
+  <label>이름 목록 (한 줄에 한 명씩)</label>
+  <textarea id="namesInput" rows="8" placeholder="예: 김민수&#10;이영희&#10;박지훈"></textarea>
+
+  <label>분할 방식 선택</label>
+  <select id="modeSelect">
+    <option value="teamCount">팀 수로 나누기</option>
+    <option value="peoplePerTeam">팀당 인원 수로 나누기</option>
+  </select>
+
+  <label id="optionLabel">팀 수</label>
+  <input type="number" id="optionValue" placeholder="예: 3" min="1"/>
+
+  <button onclick="makeTeams()">팀 나누기</button>
+
+  <!-- 결과 모달 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+		  <span class="modal-title">팀 결과 보기</span>
+		  <button class="close-btn" onclick="closeModal()">✕</button>
+		</div>
+      <div class="modal-content" id="results"></div>
+    </div>
+  </div>
+
+  <script>
+    const modeSelect = document.getElementById("modeSelect");
+    const optionLabel = document.getElementById("optionLabel");
+    const optionValue = document.getElementById("optionValue");
+    const resultsDiv = document.getElementById("results");
+    const modalOverlay = document.getElementById("modalOverlay");
+    const namesInput = document.getElementById("namesInput");
+
+    const animalList = [
+      { name: "호랑이", icon: "🐯" },
+      { name: "여우", icon: "🦊" },
+      { name: "판다", icon: "🐼" },
+      { name: "고양이", icon: "🐱" },
+      { name: "늑대", icon: "🐺" },
+      { name: "돌고래", icon: "🐬" },
+      { name: "부엉이", icon: "🦉" },
+      { name: "사자", icon: "🦁" },
+      { name: "고래", icon: "🐳" },
+      { name: "펭귄", icon: "🐧" },
+      { name: "다람쥐", icon: "🐿️" },
+      { name: "토끼", icon: "🐰" },
+      { name: "하마", icon: "🦛" },
+      { name: "원숭이", icon: "🐵" },
+      { name: "강아지", icon: "🐶" },
+      { name: "캥거루", icon: "🦘" },
+      { name: "악어", icon: "🐊" },
+      { name: "기린", icon: "🦒" },
+      { name: "치타", icon: "🐆" },
+      { name: "수달", icon: "🦦" }
+    ];
+
+    modeSelect.addEventListener("change", () => {
+      optionLabel.innerText = modeSelect.value === "teamCount" ? "팀 수" : "팀당 인원 수";
+      optionValue.value = "";
+    });
+
+    // 입력값 저장
+    [namesInput, modeSelect, optionValue].forEach(el => {
+      el.addEventListener("input", () => {
+        localStorage.setItem("names", namesInput.value);
+        localStorage.setItem("mode", modeSelect.value);
+        localStorage.setItem("value", optionValue.value);
+      });
+    });
+
+    // 저장된 값 복원
+    window.addEventListener("DOMContentLoaded", () => {
+      const storedNames = localStorage.getItem("names");
+      const storedMode = localStorage.getItem("mode");
+      const storedValue = localStorage.getItem("value");
+
+      if (storedNames) namesInput.value = storedNames;
+      if (storedMode) {
+        modeSelect.value = storedMode;
+        optionLabel.innerText = storedMode === "teamCount" ? "팀 수" : "팀당 인원 수";
+      }
+      if (storedValue) optionValue.value = storedValue;
+    });
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function makeTeams() {
+      const names = namesInput.value
+        .split("\n")
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+
+      if (names.length < 2) {
+        alert("이름을 최소 2명 이상 입력해주세요.");
+        return;
+      }
+
+      const mode = modeSelect.value;
+      const value = parseInt(optionValue.value);
+
+      if (isNaN(value) || value <= 0) {
+        alert("올바른 숫자를 입력해주세요.");
+        return;
+      }
+
+      shuffle(names);
+
+      let teams = [];
+
+      if (mode === "teamCount") {
+        for (let i = 0; i < value; i++) {
+          teams.push([]);
+        }
+        names.forEach((name, index) => {
+          teams[index % value].push(name);
+        });
+      } else {
+        const teamCount = Math.ceil(names.length / value);
+        for (let i = 0; i < teamCount; i++) {
+          teams.push([]);
+        }
+        names.forEach((name, index) => {
+          teams[Math.floor(index / value)].push(name);
+        });
+      }
+
+      displayTeams(teams);
+    }
+
+    function displayTeams(teams) {
+      resultsDiv.innerHTML = "";
+      const used = [];
+
+      teams.forEach((team, index) => {
+        let animal;
+        do {
+          animal = animalList[Math.floor(Math.random() * animalList.length)];
+        } while (used.includes(animal.name));
+        used.push(animal.name);
+
+        const div = document.createElement("div");
+        div.className = "team";
+        div.innerHTML = `<h3>${animal.icon} ${animal.name} 팀</h3><ul>${team.map(name => `<li>${name}</li>`).join("")}</ul>`;
+        resultsDiv.appendChild(div);
+      });
+
+      modalOverlay.style.display = "flex";
+    }
+
+    function closeModal() {
+      modalOverlay.style.display = "none";
+    }
+  </script>
+</body>
+</html>
