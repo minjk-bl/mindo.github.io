@@ -33,6 +33,44 @@
       background-color: #005fa3;
     }
 
+	/* 레이아웃 분할 */
+	.form-grid {
+	  display: flex;
+	  flex-direction: column;
+	  gap: 1rem;
+	}
+	
+	.left-column,
+	.right-column {
+	  width: 100%;
+	}
+	
+	/* 화면이 넓을 때 2단 레이아웃 */
+	@media (min-width: 768px) {
+	  .form-grid {
+	    flex-direction: row;
+	    gap: 2rem;
+	  }
+	
+	  .left-column,
+	  .right-column {
+	    width: 50%;
+	  }
+	
+	  .right-column {
+	    display: flex;
+	    flex-direction: column;
+	    justify-content: flex-start;
+	  }
+	
+	  .right-column label,
+	  .right-column select,
+	  .right-column input,
+	  .right-column button {
+	    margin-bottom: 1rem;
+	  }
+	}
+
     /* 모달 스타일 */
     .modal-overlay {
       position: fixed;
@@ -115,20 +153,24 @@
 </head>
 <body>
   <h1>랜덤 팀 나누기</h1>
-
-  <label>이름 목록 (한 줄에 한 명씩)</label>
-  <textarea id="namesInput" rows="8" placeholder="예: 김민수&#10;이영희&#10;박지훈"></textarea>
-
-  <label>분할 방식 선택</label>
-  <select id="modeSelect">
-    <option value="teamCount">팀 수로 나누기</option>
-    <option value="peoplePerTeam">팀당 인원 수로 나누기</option>
-  </select>
-
-  <label id="optionLabel">팀 수</label>
-  <input type="number" id="optionValue" placeholder="예: 3" min="1"/>
-
-  <button onclick="makeTeams()">팀 나누기</button>
+  <div class="form-grid">
+  	<div class="left-column">
+	  <label>이름 목록 (한 줄에 한 명씩)</label>
+	  <textarea id="namesInput" rows="8" placeholder="예: 김민수&#10;이영희&#10;박지훈"></textarea>
+	</div>
+	<div class="right-column">
+	  <label>분할 방식 선택</label>
+	  <select id="modeSelect">
+	    <option value="teamCount">팀 수로 나누기</option>
+	    <option value="peoplePerTeam">팀당 인원 수로 나누기</option>
+	  </select>
+	
+	  <label id="optionLabel">팀 수</label>
+	  <input type="number" id="optionValue" placeholder="예: 3" min="1"/>
+	
+	  <button onclick="makeTeams()">팀 나누기</button>
+	</div>
+  </div>
 
   <!-- 결과 모달 -->
   <div class="modal-overlay" id="modalOverlay">
