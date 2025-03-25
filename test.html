@@ -1,11 +1,285 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <title>웹 서버 맛보기</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>😎</text></svg>">
-  </head>
-  <body>
-    테스트
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>웹 서버 구조 시각화</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+  <style>
+    body {
+      font-family: Pretendard, sans-serif;
+      background: #f4f6fa;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .container {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .box {
+      width: 240px;
+      min-height: 220px;
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .box:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .title {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    textarea, select, input[type="text"] {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: vertical;
+    }
+    
+    #refreshButton {
+		background-color: #4a90e2;
+		color: white;
+		border: none;
+		border-radius: 6px;
+		padding: 10px 20px;
+		font-size: 16px;
+		font-weight: 500;
+		cursor: pointer;
+		box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+		transition: background-color 0.3s, transform 0.2s;
+	}
+
+	#refreshButton:hover {
+		background-color: #3a78c2;
+		transform: translateY(-2px);
+	}
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+
+    th, td {
+      padding: 0.4rem;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+
+    .arrow {
+      font-size: 2rem;
+      color: #aaa;
+      margin: 0 1rem;
+    }
+
+    .browser {
+      width: 80%;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .browser-header {
+      background: #e0e0e0;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .browser-buttons {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .browser-button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .close { background: #ff5f57; }
+    .minimize { background: #ffbd2e; }
+    .maximize { background: #28c840; }
+
+    .browser-url {
+      flex-grow: 1;
+      margin-left: 1rem;
+      margin-right: 1rem;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .browser-content {
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>웹 서버 흐름 시각화</h1>
+  <div class="container">
+    <div class="box">
+      <div class="title">브라우저</div>
+      <div>
+        사용자 화면을 시뮬레이션한 박스입니다.<br>
+        <button id="refreshButton" onclick="refreshBrowser()">🔄 새로고침</button>
+      </div>
+    </div>
+    <div class="arrow">⟶</div>
+    <div class="box">
+      <div class="title">프론트엔드</div>
+      <input id="frontendText" type="text" placeholder="제목을 입력하세요" />
+    </div>
+    <div class="arrow">⟶</div>
+    <div class="box">
+      <div class="title">API 서버</div>
+      <input id="apiInput" type="text" placeholder="예: /user/123" />
+      <select id="apiSelect">
+        <option value="users">회원 정보</option>
+        <option value="products">제품 목록</option>
+        <option value="orders">주문 내역</option>
+        <option value="reviews">고객 리뷰</option>
+      </select>
+    </div>
+    <div class="arrow">⟶</div>
+    <div class="box">
+      <div class="title">데이터베이스</div>
+      <select id="dbSelect" onchange="renderDBTable()">
+        <option value="users">회원 목록</option>
+        <option value="products">제품 목록</option>
+        <option value="orders">주문 내역</option>
+        <option value="reviews">고객 리뷰</option>
+      </select>
+      <table>
+        <thead id="dbHead"></thead>
+        <tbody id="dbTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="browser">
+    <div class="browser-header">
+      <div class="browser-buttons">
+        <div class="browser-button close"></div>
+        <div class="browser-button minimize"></div>
+        <div class="browser-button maximize"></div>
+      </div>
+      <div class="browser-url">localhost:3000</div>
+    </div>
+    <div class="browser-content" id="output"></div>
+  </div>
+
+  <script>
+
+    const dbMock = {
+      users: [
+        { ID: 1, 이름: "Alice" },
+        { ID: 2, 이름: "Bob" },
+        { ID: 3, 이름: "Charlie" },
+        { ID: 4, 이름: "Diana" }
+      ],
+      products: [
+        { ID: 101, 제품명: "노트북" },
+        { ID: 102, 제품명: "마우스" },
+        { ID: 103, 제품명: "키보드" },
+        { ID: 104, 제품명: "모니터" }
+      ],
+      orders: [
+        { 주문번호: "A001", 상태: "배송 중" },
+        { 주문번호: "A002", 상태: "배송 완료" },
+        { 주문번호: "A003", 상태: "결제 대기" },
+        { 주문번호: "A004", 상태: "주문 취소" }
+      ],
+      reviews: [
+        { 리뷰ID: 1, 내용: "아주 좋아요" },
+        { 리뷰ID: 2, 내용: "보통이에요" },
+        { 리뷰ID: 3, 내용: "별로예요" },
+        { 리뷰ID: 4, 내용: "만족합니다" }
+      ]
+    };
+
+    function renderDBTable() {
+      const type = document.getElementById("dbSelect").value;
+      const data = dbMock[type];
+      const head = document.getElementById("dbHead");
+      const body = document.getElementById("dbTable");
+
+      head.innerHTML = "";
+      body.innerHTML = "";
+
+      if (data.length > 0) {
+        // 헤더 설정
+        const headers = Object.keys(data[0]);
+        const tr = document.createElement("tr");
+        headers.forEach(h => {
+          const th = document.createElement("th");
+          th.textContent = h;
+          tr.appendChild(th);
+        });
+        const th = document.createElement("th");
+        th.textContent = "수정";
+        tr.appendChild(th);
+        head.appendChild(tr);
+
+        // 본문 설정
+        data.forEach((row, rowIndex) => {
+          const tr = document.createElement("tr");
+          headers.forEach(h => {
+            const td = document.createElement("td");
+            td.contentEditable = true;
+            td.textContent = row[h];
+            td.oninput = () => {
+              dbMock[type][rowIndex][h] = td.textContent;
+            };
+            tr.appendChild(td);
+          });
+          const td = document.createElement("td");
+          td.textContent = "✔";
+          tr.appendChild(td);
+          body.appendChild(tr);
+        });
+      }
+    }
+
+    function refreshBrowser() {
+      const frontendText = document.getElementById("frontendText").value;
+      const apiPath = document.getElementById("apiSelect").value;
+      const data = dbMock[apiPath];
+
+      let result = "";
+      if (typeof data === 'object' && !Array.isArray(data)) {
+        for (let key in data) {
+          result += `<p><strong>${key}:</strong> ${data[key]}</p>`;
+        }
+      } else {
+        result = `<p>${JSON.stringify(data)}</p>`;
+      }
+
+      document.getElementById("output").innerHTML = `
+        <h2>${frontendText}</h2>
+        ${result}
+      `;
+    }
+
+    window.onload = renderDBTable;
+  </script>
+</body>
 </html>
